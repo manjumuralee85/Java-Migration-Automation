@@ -1,1 +1,1 @@
-# Java-Migration-Automation
+# Java-Migration-Automation for new applications
