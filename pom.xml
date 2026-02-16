@@ -309,6 +309,49 @@
         </dependencies>
       </plugin>
       -->
+
+      <!-- ============================================================
+           OpenRewrite Maven Plugin for Java 8 to Java 11 Migration
+           ============================================================
+           Purpose: Automatically refactor code for Java 11 compatibility
+           Recipes: Java8toJava11, UpgradeJava, RemoveUnusedImports
+           Run: mvn org.openrewrite:rewrite-maven-plugin:run
+           ============================================================ -->
+      <plugin>
+        <groupId>org.openrewrite</groupId>
+        <artifactId>rewrite-maven-plugin</artifactId>
+        <version>5.40.0</version>
+        <configuration>
+          <!-- Define recipes to apply -->
+          <activeRecipes>
+            <activeRecipe>org.openrewrite.java.migrate.Java8toJava11</activeRecipe>
+            <activeRecipe>org.openrewrite.java.migrate.UpgradeJava</activeRecipe>
+            <activeRecipe>org.openrewrite.java.cleanup.RemoveUnusedImports</activeRecipe>
+            <activeRecipe>org.openrewrite.java.format.AutoFormat</activeRecipe>
+          </activeRecipes>
+
+          <!-- Fail the build if recipes cannot be applied -->
+          <failOnDryRunResults>false</failOnDryRunResults>
+
+          <!-- Export results as JSON for CI/CD pipelines -->
+          <exportDatatables>false</exportDatatables>
+        </configuration>
+        <dependencies>
+          <!-- Core OpenRewrite recipes -->
+          <dependency>
+            <groupId>org.openrewrite.recipe</groupId>
+            <artifactId>rewrite-migrate-java</artifactId>
+            <version>2.24.0</version>
+          </dependency>
+          <!-- Common refactoring recipes -->
+          <dependency>
+            <groupId>org.openrewrite.recipe</groupId>
+            <artifactId>rewrite-java</artifactId>
+            <version>2.24.0</version>
+          </dependency>
+        </dependencies>
+      </plugin>
+
     </plugins>
   </build>
 

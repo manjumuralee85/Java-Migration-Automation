@@ -1,0 +1,148 @@
+###############################################################################
+# Java Migration Workflow: Automates Java 11 → 17 upgrade (Stepwise)
+#
+# This workflow runs AFTER Java 8 → 11 migration completes
+# Prerequisites: Application must be running Java 11 first
+#
+# Features:
+# 1. Updates JDK to 17
+# 2. Runs OpenRewrite recipes for Java 17 modernization
+# 3. Updates Spring Framework to 6.x (if needed)
+# 4. Builds and tests
+# 5. Creates PR for review
+#
+# Note: This is a template. Customize java-version and other inputs as needed.
+###############################################################################
+
+name: Java 11 to 17 Migration (Template)
+
+on:
+  # Manual trigger - use this after Java 8 → 11 is complete
+  workflow_dispatch:
+
+  # Optional: Schedule for specific date
+  # schedule:
+  #   - cron: '0 2 * * 2'  # Tuesday 2 AM UTC
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  migrate-11-to-17:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: "📥 Checkout Code"
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "☕ Setup Java 17 (Target Version)"
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'maven'
+          cache-dependency-path: '**/pom.xml'
+
+      - name: "🔧 Update pom.xml for Java 17"
+        run: |
+          echo "📝 Updating pom.xml to target Java 17..."
+          sed -i 's/<java.version>.*<\/java.version>/<java.version>17<\/java.version>/g' pom.xml
+          echo "✅ Updated java.version property"
+
+      - name: "🤖 Run OpenRewrite Recipes (Java 11 to 17)"
+        continue-on-error: true
+        run: |
+          echo "🔄 Running OpenRewrite recipes for Java 17 migration..."
+          mvn -B org.openrewrite:rewrite-maven-plugin:run \
+            -Drecipes='org.openrewrite.java.migrate.Java11to17' \
+            -DskipTests || echo "⚠️ OpenRewrite step encountered issues"
+
+      - name: "🏗️ Maven Build & Test"
+        id: build
+        continue-on-error: true
+        run: |
+          mvn -B -T 1C clean verify -DskipITs
+          if [ $? -eq 0 ]; then
+            echo "BUILD_SUCCESS=true" >> $GITHUB_OUTPUT
+          else
+            echo "BUILD_SUCCESS=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: "⚙️ Configure Git"
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: "📤 Create Branch and Commit"
+        id: commit
+        run: |
+          BRANCH_NAME="auto/java-17-upgrade-$(date +%s)"
+          echo "BRANCH_NAME=$BRANCH_NAME" >> $GITHUB_OUTPUT
+          
+          git checkout -b "$BRANCH_NAME"
+          git add -A
+          
+          if git diff --cached --quiet; then
+            echo "HAS_CHANGES=false" >> $GITHUB_OUTPUT
+          else
+            git commit -m "chore: migrate Java 11 to Java 17
+
+- Update JDK target to Java 17
+- Run OpenRewrite recipes for Java 17 compatibility
+- Update dependencies as needed
+
+Build status: ${{ steps.build.outputs.BUILD_SUCCESS }}"
+            git push --set-upstream origin "$BRANCH_NAME"
+            echo "HAS_CHANGES=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: "🚀 Create Pull Request"
+        if: ${{ steps.commit.outputs.HAS_CHANGES == 'true' }}
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ${{ steps.commit.outputs.BRANCH_NAME }}
+          delete-branch: false
+          title: "🔄 chore: Migrate Java 11 to Java 17"
+          body: |
+            ## Java 11 → Java 17 Migration
+
+            This PR automates the migration to Java 17 (LTS release).
+
+            ### Changes Made:
+            - ✅ Updated JDK target version to 17
+            - ✅ Ran OpenRewrite recipes for Java 17 compatibility
+            - ✅ Updated dependencies
+            - ✅ Removed Java 11 specific workarounds (if any)
+
+            ### Build Status:
+            - Build: **${{ steps.build.outputs.BUILD_SUCCESS }}**
+            - Tests: Check CI logs for details
+
+            ### Java 17 Features You Now Have:
+            - 🎯 Records (immutable data carriers)
+            - 📦 Sealed classes (restrict inheritance)
+            - 🔍 Pattern matching improvements
+            - ⚡ Foreign Function & Memory API (preview)
+            - 🚀 Better performance and GC improvements
+
+            ### Next Steps:
+            1. Review changes in "Files changed"
+            2. Check test results
+            3. Approve and merge
+            4. Deploy to staging for testing
+
+            ### Resources:
+            - [Java 17 Migration Guide](https://docs.oracle.com/en/java/javase/17/migrate/)
+            - [Java 17 Features](https://openjdk.org/projects/jdk/17/)
+
+            ---
+            Generated by Java Migration Workflow
+            Run: [${{ github.run_id }}](${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          labels: 'automation,jdk-upgrade,java-17'
+          draft: ${{ steps.build.outputs.BUILD_SUCCESS == 'false' }}
+

@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+OpenRewrite Configuration for Java 8 → Java 11 Migration
+
+This file defines which OpenRewrite recipes to apply during the migration.
+OpenRewrite automatically refactors code to be compatible with Java 11.
+
+Key Recipes:
+- Java8toJava11: Core Java language updates
+- UpdateMavenCompilerPlugin: Updates maven-compiler-plugin
+- RemoveUnusedImports: Cleans up imports
+- UseVar: Uses var keyword where appropriate (Java 10+)
+
+For more recipes, see: https://docs.openrewrite.org/recipes/java/migrate/java8tojava11
+-->
+<rewrite>
+  <!-- Recipe Groups -->
+  <recipes>
+    <!-- Java 8 to Java 11 Migration -->
+    <recipe>org.openrewrite.java.migrate.Java8toJava11</recipe>
+
+    <!-- Optional: Use var keyword (Java 10+) -->
+    <recipe>org.openrewrite.java.migrate.UpgradeJava</recipe>
+
+    <!-- Remove unused imports -->
+    <recipe>org.openrewrite.java.cleanup.RemoveUnusedImports</recipe>
+
+    <!-- Format code -->
+    <recipe>org.openrewrite.java.format.AutoFormat</recipe>
+  </recipes>
+
+  <!-- Configuration Options -->
+  <options>
+    <!-- Target Java Version -->
+    <option name="java.version">11</option>
+
+    <!-- Strict Mode: Fail if any recipe cannot be applied -->
+    <option name="strict">false</option>
+  </options>
+</rewrite>
+
