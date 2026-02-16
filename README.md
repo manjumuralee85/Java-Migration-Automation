@@ -1,1 +1,1 @@
-# Java-Migration-Automation for new applications
+# Java-Migration-Automation for new applications - auto-migrates Java 8 to 11, with templates for Java 11 to 17, 21, 25. Fully documented, tested, and ready for production. Start with INDEX.md → MIGRATION_QUICKSTART.md → Execute! 🚀
